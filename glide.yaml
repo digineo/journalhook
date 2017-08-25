@@ -6,4 +6,4 @@ package: main
 
 import:
     - package: github.com/sirupsen/logrus
-    - package: github.com/coreos/go-systemd/journal
+    - package: github.com/ssgreg/journald-send
