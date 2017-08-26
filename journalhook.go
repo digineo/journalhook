@@ -7,7 +7,7 @@ import (
 	"unicode"
 
 	"github.com/sirupsen/logrus"
-	journald "github.com/ssgreg/journald-send"
+	"github.com/ssgreg/journald"
 )
 
 // JournalHook is the systemd-journald hook for logrus.
