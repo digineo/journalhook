@@ -1,27 +1,53 @@
 package journalhook
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"testing"
+	"time"
 
-func TestStringifyEntries(t *testing.T) {
-	input := map[string]interface{}{
-		"foo":     "bar",
-		"baz":     123,
-		"foo-foo": "x",
-		"-bar":    "1",
-	}
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
+)
 
-	output := stringifyEntries(input)
-	if output["FOO"] != "bar" {
-		t.Fatalf("%v", output)
-		t.Fatalf("expected value 'bar'. Got %q", output["FOO"])
-	}
-	if output["BAZ"] != "123" {
-		t.Fatalf("expected value '123'. Got %q", output["BAZ"])
-	}
-	if output["FOO_FOO"] != "x" {
-		t.Fatalf("expected value 'x'. Got %q", output["FOO_FOO"])
-	}
-	if output["BAR"] != "1" {
-		t.Fatalf("expected value 'x'. Got %q", output["BAR"])
-	}
+var (
+	uniqueSmallMessageID = "1"
+)
+
+func TestMain(m *testing.M) {
+	uniqueSmallMessageID = time.Now().String()
+
+	os.Exit(m.Run())
+}
+
+type Test struct {
+	Field1 string
+	Field2 int
+	Field3 map[string]float32
+}
+
+func TestCheckSmallMessage(t *testing.T) {
+	log := logrus.New()
+	hook, err := NewJournalHook()
+	require.NoError(t, err)
+	log.Hooks.Add(hook)
+
+	log.WithFields(logrus.Fields{
+		"test_id": uniqueSmallMessageID,
+		"struct":  Test{"field1", 2, map[string]float32{"3": 0.4, "5": 6.7}},
+		"bytes":   []byte{'\n', 0xde, 0xad, 0xbe, 0xef},
+	}).Info("SmallMessage")
+
+	time.Sleep(time.Second * 5)
+
+	out, err := exec.Command("sh", "-c", fmt.Sprintf("journalctl 'TEST_ID=%s' -o json", uniqueSmallMessageID)).Output()
+	fmt.Println(string(out))
+
+	require.NoError(t, err)
+	require.True(t, strings.Contains(string(out), "MESSAGE\" : \"SmallMessage"))
+	require.True(t, strings.Contains(string(out), "PRIORITY\" : \"6"))
+	require.True(t, strings.Contains(string(out), "STRUCT\" : \"{field1 2 map[3:0.4 5:6.7]}"))
+	require.True(t, strings.Contains(string(out), "BYTES\" : [ 10, 222, 173, 190, 239 ]"))
 }
