@@ -18,9 +18,16 @@ func NewJournalHook() (*JournalHook, error) {
 	if journald.IsNotExist() {
 		return nil, errors.New("systemd journal is not exist")
 	}
-	return &JournalHook{journald.Journal{
+	j := journald.Journal{
 		NormalizeFieldNameFn: strings.ToUpper,
-	}}, nil
+	}
+	// Register an exit handler to be sure that journal connection will
+	// be successfully closed and no log entries will be lost.
+	// Client should call logrus.Exit() at exit.
+	logrus.RegisterExitHandler(func() {
+		j.Close()
+	})
+	return &JournalHook{j}, nil
 }
 
 // JournalHook is the systemd-journald hook for logrus.
@@ -28,7 +35,7 @@ type JournalHook struct {
 	Journal journald.Journal
 }
 
-// Fire writes a message to the systemd journal.
+// Fire writes a log entry to the systemd journal.
 func (h *JournalHook) Fire(entry *logrus.Entry) error {
 	return h.Journal.Send(entry.Message, levelToPriority(entry.Level), entry.Data)
 }
