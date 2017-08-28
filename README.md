@@ -30,7 +30,9 @@ fun  main() {
     }
 
     logEntry := log.WithFields(logrus.Fields{
-        "pid": os.Getpid(),
+        "n_goroutine": runtime.NumGoroutine(),
+        "executable":  os.Args[0],
+        "trace":       runtime.ReadTrace(),
     })
 
     logEntry.Info("Hello World!")
