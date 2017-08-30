@@ -13,8 +13,9 @@ import (
 	"github.com/ssgreg/journald"
 )
 
-// NewJournalHook creates a hook to be added to an instance of logger.
-func NewJournalHook() (*JournalHook, error) {
+// NewJournalHookWithLevels creates a hook to be added to an instance of logger.
+// It's also allowed to specify logrus levels to fire events for.
+func NewJournalHookWithLevels(levels []logrus.Level) (*JournalHook, error) {
 	if journald.IsNotExist() {
 		return nil, errors.New("systemd journal is not exist")
 	}
@@ -27,12 +28,21 @@ func NewJournalHook() (*JournalHook, error) {
 	logrus.RegisterExitHandler(func() {
 		j.Close()
 	})
-	return &JournalHook{j}, nil
+	return &JournalHook{
+		Journal:      j,
+		LogrusLevels: levels,
+	}, nil
+}
+
+// NewJournalHook creates a hook to be added to an instance of logger.
+func NewJournalHook() (*JournalHook, error) {
+	return NewJournalHookWithLevels(logrus.AllLevels)
 }
 
 // JournalHook is the systemd-journald hook for logrus.
 type JournalHook struct {
-	Journal *journald.Journal
+	Journal      *journald.Journal
+	LogrusLevels []logrus.Level
 }
 
 // Fire writes a log entry to the systemd journal.
@@ -42,7 +52,7 @@ func (h *JournalHook) Fire(entry *logrus.Entry) error {
 
 // Levels returns a slice of Levels the hook is fired for.
 func (h *JournalHook) Levels() []logrus.Level {
-	return logrus.AllLevels
+	return h.LogrusLevels
 }
 
 func levelToPriority(l logrus.Level) journald.Priority {
