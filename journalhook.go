@@ -7,6 +7,7 @@ package journalhook
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -47,7 +48,25 @@ type JournalHook struct {
 
 // Fire writes a log entry to the systemd journal.
 func (h *JournalHook) Fire(entry *logrus.Entry) error {
-	return h.Journal.Send(entry.Message, levelToPriority(entry.Level), entry.Data)
+	var message string
+
+	// Default journalctl output will only show the contents of the `MESSAGE`
+	// field. If the message is empty but the entry has an associated error, we
+	// replace the message with the contents of the error so that it is shown in
+	// the journalctl output by default..
+	//
+	// This makes it possible to use `log.WithError(err).Error()` without
+	// providing an additional error message.
+	//
+	// If a string is passed to `Error` function, this is used as the message.
+	if entry.Message == "" && entry.Data["error"] != nil {
+		message = fmt.Sprintf("%s", entry.Data["error"])
+		delete(entry.Data, "error")
+	} else {
+		message = entry.Message
+	}
+
+	return h.Journal.Send(message, levelToPriority(entry.Level), entry.Data)
 }
 
 // Levels returns a slice of Levels the hook is fired for.
