@@ -14,6 +14,11 @@ import (
 	"github.com/ssgreg/journald"
 )
 
+// NormalizeFieldName returns field name acceptable by journald.
+func NormalizeFieldName(s string) string {
+	return strings.ToUpper(strings.Replace(s, "-", "_", -1))
+}
+
 // NewJournalHookWithLevels creates a hook to be added to an instance of logger.
 // It's also allowed to specify logrus levels to fire events for.
 func NewJournalHookWithLevels(levels []logrus.Level) (*JournalHook, error) {
@@ -21,7 +26,7 @@ func NewJournalHookWithLevels(levels []logrus.Level) (*JournalHook, error) {
 		return nil, errors.New("systemd journal is not exist")
 	}
 	j := &journald.Journal{
-		NormalizeFieldNameFn: strings.ToUpper,
+		NormalizeFieldNameFn: NormalizeFieldName,
 	}
 	// Register an exit handler to be sure that journal connection will
 	// be successfully closed and no log entries will be lost.
