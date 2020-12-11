@@ -22,7 +22,7 @@ import (
     "github.com/sirupsen/logrus"
     "github.com/ssgreg/journalhook"
 
-fun  main() {
+func main() {
     log := logrus.New()
     hook, err := journalhook.NewJournalHook()
     if err == nil {
