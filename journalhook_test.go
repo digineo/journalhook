@@ -13,9 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	uniqueSmallMessageID = "1"
-)
+var uniqueSmallMessageID = "1"
 
 func TestMain(m *testing.M) {
 	uniqueSmallMessageID = time.Now().String()

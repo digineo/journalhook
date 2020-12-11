@@ -96,7 +96,6 @@ func ErrToMsg(entry *logrus.Entry) {
 		entry.Message = fmt.Sprintf("%s", entry.Data["error"])
 		delete(entry.Data, "error")
 	}
-
 }
 
 // Levels returns a slice of Levels the hook is fired for.
